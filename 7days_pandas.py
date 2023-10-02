@@ -47,3 +47,4 @@ for url in urls:
 combined_df = pd.concat(dfs, ignore_index=True) #Concatenar DataFrames em um único DataFrame
 combined_df = combined_df.drop_duplicates() #Remoção de linhas duplicadas
 combined_df = combined_df.fillna(0) #Substituir valores nulos por 0
+combined_df = pd.read_parquet('https://github.com/FranciscoFoz/7_Days_of_Code_Alura-Python-Pandas/raw/main/Dia_1-Importando_dados/Datasets/dados_exemplares.parquet')
