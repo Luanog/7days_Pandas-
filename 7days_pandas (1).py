@@ -96,27 +96,55 @@ ax.set_title('Exemplares emprestados do SISBI por ano'+'\n',size=20,loc='left',w
 
 ax=ax
 
-# Ordene os dados pelo mês
+emprestimos_por_mes = emprestimos_data.groupby(by=emprestimos_data.data.dt.month).sum(numeric_only=True)
+emprestimos_por_mes.index.name = 'mes'
+emprestimos_por_mes
+
+dicionario_meses = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',
+                    5:'Mai',6:'Jun',7:'Jul',8:'Ago',
+                    9:'Set',10:'Out',11:'Nov',12:'Dez'}
+
+
+emprestimos_por_mes = emprestimos_por_mes.reset_index()
+
+# Ordene os meses de forma adequada
+emprestimos_por_mes['mes'] = emprestimos_por_mes['mes'].map(dicionario_meses)
 emprestimos_por_mes = emprestimos_por_mes.sort_values(by='mes')
 
-# Crie uma variável para controlar a ordem dos meses
-meses_ordenados = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+order = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
-# Crie uma lista para os rótulos dos meses
-rotulos_meses = [mes for mes in meses_ordenados if mes in emprestimos_por_mes['mes']]
+# Reorganize o DataFrame de acordo com a ordem dos meses
+emprestimos_por_mes = emprestimos_por_mes.set_index('mes').loc[order].reset_index()
 
-# Crie o gráfico
-ax = sns.lineplot(data=emprestimos_por_mes, x='mes', y='quantidade', sort=False)
+# Crie o gráfico de linha
+plt.figure(figsize=(15, 8))
 
-# Configure os rótulos do eixo x
-ax.set_xticks(range(len(rotulos_meses)))
-ax.set_xticklabels(rotulos_meses, rotation=45)
+ax = sns.lineplot(data=emprestimos_por_mes, x='mes', y='quantidade', marker='o', sort=False)
 
-# Restante do código para personalização
-ax.set_xlabel("Mês", fontsize=16, labelpad=10)
-ax.set_ylabel("Quantidade", fontsize=16, labelpad=10)
-ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: format(int(x), ',').replace(',', '.')))
+# Configure os rótulos e títulos
+ax.set(xlabel=None,ylabel=None)
 ax.set_title("Quantidade de exemplares emprestados do SISBI por mês" + "\n", size=20, loc='left', weight='bold')
 ax.text(s='Período de 2010 a 2020', x=-0.5, y=265000, fontsize=18, ha='left', color='gray')
 
-plt.show()  # Exiba o gráfico
+# Formate os rótulos do eixo y com separadores de milhares
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+
+plt.show()
+
+emprestimos_por_hora = emprestimos_data.groupby(by=emprestimos_data.data.dt.hour).sum(numeric_only=True)
+emprestimos_por_hora.index.name = 'horas'
+emprestimos_por_hora = emprestimos_por_hora.reset_index()
+emprestimos_por_hora
+
+emprestimos_por_hora = emprestimos_por_hora.sort_values(ascending=True,by='quantidade')
+
+
+ax = sns.barplot(data=emprestimos_por_hora,y='quantidade',x='horas',
+                 palette='Blues',hue='quantidade',dodge=False)                  #Ordenar pela quantidade de exemplares emprestados
+plt.legend([],[], frameon=False)                                                #Excluir a legenda do gráfico
+
+ax.set(xlabel='Horário',ylabel=None)
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: format(int(x), ',').replace(',','.')))
+ax.set_title("Quantidade de exemplares emprestados do SISBI por faixa horária"+"\n",size=20,loc='left',weight='bold')
+ax.text(s='Período de 2010 a 2020',x=-0.5,y=225000,fontsize=18, ha='left',color='gray')
+ax=ax
