@@ -8,6 +8,9 @@ Original file is located at
 """
 
 import pandas as pd
+import seaborn as sns
+import matplotlib.ticker as ticker
+import matplotlib.pyplot as plt
 
 emp_2010_1 = pd.read_csv('https://github.com/FranciscoFoz/7_Days_of_Code_Alura-Python-Pandas/blob/main/Dia_1-Importando_dados/Datasets/dados_emprestimos/emprestimos-20101.csv?raw=true')
 emp_2010_2 = pd.read_csv('https://github.com/FranciscoFoz/7_Days_of_Code_Alura-Python-Pandas/blob/main/Dia_1-Importando_dados/Datasets/dados_emprestimos/emprestimos-20102.csv?raw=true')
@@ -64,4 +67,210 @@ for CDU in emprestimos_completo['localizacao']:
   else:
     CDU_lista.append('Geografia. Biografia. História.')
 
-emprestimos_completo['CDU_geral'] = CDU_lista
+emprestimos = len(emprestimos_completo['id_emprestimo'].drop_duplicates())
+ #
+
+exemplares = len(emprestimos_completo)
+
+
+emprestimos_data = pd.DataFrame(emprestimos_completo['data_emprestimo'].value_counts()).reset_index()
+emprestimos_data.columns = ['data','quantidade']
+emprestimos_data['data'] = pd.to_datetime(emprestimos_data['data'])
+
+
+emprestimos_por_ano = emprestimos_data.groupby(by=emprestimos_data.data.dt.year).sum(numeric_only=True)
+emprestimos_por_ano.index.name = 'ano'
+
+sns.set_theme(context='notebook',
+              style='darkgrid',
+              palette='deep',
+              font_scale=1.3,
+              rc={"figure.figsize":(15,8)})
+
+ax = sns.lineplot(data=emprestimos_por_ano,x='ano',y='quantidade')
+ax.set(xlabel=None,ylabel=None)
+ax.tick_params(axis='x', rotation=30)
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: format(int(x), ',').replace(',','.')))
+
+ax.set_title('Exemplares emprestados do SISBI por ano'+'\n',size=20,loc='left',weight='bold')
+
+ax=ax
+
+emprestimos_por_mes = emprestimos_data.groupby(by=emprestimos_data.data.dt.month).sum(numeric_only=True)
+emprestimos_por_mes.index.name = 'mes'
+emprestimos_por_mes
+
+dicionario_meses = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',
+                    5:'Mai',6:'Jun',7:'Jul',8:'Ago',
+                    9:'Set',10:'Out',11:'Nov',12:'Dez'}
+
+
+emprestimos_por_mes = emprestimos_por_mes.reset_index()
+
+# Ordene os meses de forma adequada
+emprestimos_por_mes['mes'] = emprestimos_por_mes['mes'].map(dicionario_meses)
+emprestimos_por_mes = emprestimos_por_mes.sort_values(by='mes')
+
+order = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
+# Reorganize o DataFrame de acordo com a ordem dos meses
+emprestimos_por_mes = emprestimos_por_mes.set_index('mes').loc[order].reset_index()
+
+# Crie o gráfico de linha
+plt.figure(figsize=(15, 8))
+
+ax = sns.lineplot(data=emprestimos_por_mes, x='mes', y='quantidade', marker='o', sort=False)
+
+# Configure os rótulos e títulos
+ax.set(xlabel=None,ylabel=None)
+ax.set_title("Quantidade de exemplares emprestados do SISBI por mês" + "\n", size=20, loc='left', weight='bold')
+ax.text(s='Período de 2010 a 2020', x=-0.5, y=265000, fontsize=18, ha='left', color='gray')
+
+# Formate os rótulos do eixo y com separadores de milhares
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: format(int(x), ',')))
+
+plt.show()
+
+emprestimos_por_hora = emprestimos_data.groupby(by=emprestimos_data.data.dt.hour).sum(numeric_only=True)
+emprestimos_por_hora.index.name = 'horas'
+emprestimos_por_hora = emprestimos_por_hora.reset_index()
+emprestimos_por_hora
+
+emprestimos_por_hora = emprestimos_por_hora.sort_values(ascending=True,by='quantidade')
+
+
+ax = sns.barplot(data=emprestimos_por_hora,y='quantidade',x='horas',
+                 palette='Blues',hue='quantidade',dodge=False)                  #Ordenar pela quantidade de exemplares emprestados
+plt.legend([],[], frameon=False)                                                #Excluir a legenda do gráfico
+
+ax.set(xlabel='Horário',ylabel=None)
+ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: format(int(x), ',').replace(',','.')))
+ax.set_title("Quantidade de exemplares emprestados do SISBI por faixa horária"+"\n",size=20,loc='left',weight='bold')
+ax.text(s='Período de 2010 a 2020',x=-0.5,y=225000,fontsize=18, ha='left',color='gray')
+ax=ax
+
+emprestimos_completo['data_emprestimo'] = pd.to_datetime(emprestimos_completo['data_emprestimo'])
+
+emprestimos_completo.tipo_vinculo_usuario.unique()
+emprestimos_completo.colecao.unique()
+emprestimos_completo.biblioteca.unique()
+
+def tabela_frequencia(variavel):
+  dataframe = pd.DataFrame(emprestimos_completo[variavel].value_counts())
+  dataframe.columns = ['quantidade']
+  dataframe['percentual'] = round((dataframe.quantidade / dataframe.quantidade.sum())*100,1)
+
+  return dataframe
+
+tabela_frequencia('tipo_vinculo_usuario')
+tabela_frequencia('colecao')
+tabela_frequencia('biblioteca')
+
+emprestimos_completo.head()
+
+alunos_graduacao_acervo_circulante = alunos_graduacao.query('colecao == "Acervo Circulante"')
+alunos_graduacao_acervo_circulante = pd.DataFrame(alunos_graduacao_acervo_circulante)
+alunos_graduacao_acervo_circulante['data_emprestimo'] = pd.to_datetime(alunos_graduacao_acervo_circulante['data_emprestimo'])
+alunos_graduacao_acervo_circulante['ano'] = alunos_graduacao_acervo_circulante['data_emprestimo'].dt.year
+alunos_graduacao_acervo_circulante['mes'] = alunos_graduacao_acervo_circulante['data_emprestimo'].dt.month
+alunos_graduacao_acervo_circulante = alunos_graduacao_acervo_circulante.loc[:,['ano','mes']]
+alunos_graduacao_acervo_circulante = alunos_graduacao_acervo_circulante.value_counts().to_frame('quantidade').reset_index()
+alunos_graduacao_acervo_circulante
+
+def gera_box_plot(dataset,x,y,titulo,subtitulo):
+  sns.set_theme(style="darkgrid", palette='Blues',font_scale=1.3)
+  plt.figure(figsize=(16,10))
+
+  ax = sns.boxplot(y= y, x= x, data= dataset,color='#4171EF')
+  ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, p: format(int(x), ',').replace(',','.')))
+
+
+  plt.ylim(0,max(dataset[y])*1.1)                                               #Definir o limite do eixo y
+  plt.xlabel(None)
+  plt.ylabel(None)
+
+  ax.set_title(titulo+"\n",size=20,loc='left',weight='bold')
+  ax.text(s=subtitulo,x=-0.5,y=max(dataset[y])*1.11,fontsize=18, ha='left',color='gray')
+
+gera_box_plot(alunos_graduacao_acervo_circulante,'ano','quantidade','Distribuição dos empréstimos mensais', 'Realizados pelos alunos de graduação no acervo circulante')
+
+alunos_pos_graduacao = emprestimos_completo.query('tipo_vinculo_usuario == "ALUNO DE PÓS-GRADUAÇÃO"')
+alunos_pos_graduacao.colecao.value_counts()
+
+alunos_pos_graduacao_acervo_circulante = alunos_pos_graduacao.query('colecao == "Acervo Circulante"')
+alunos_pos_graduacao_acervo_circulante = pd.DataFrame(alunos_pos_graduacao_acervo_circulante)
+alunos_pos_graduacao_acervo_circulante['data_emprestimo'] = pd.to_datetime(alunos_pos_graduacao_acervo_circulante['data_emprestimo'])
+alunos_pos_graduacao_acervo_circulante['ano'] = alunos_pos_graduacao_acervo_circulante['data_emprestimo'].dt.year
+alunos_pos_graduacao_acervo_circulante['mes'] = alunos_pos_graduacao_acervo_circulante['data_emprestimo'].dt.month
+alunos_pos_graduacao_acervo_circulante = alunos_pos_graduacao_acervo_circulante.loc[:,['ano','mes']]
+alunos_pos_graduacao_acervo_circulante = alunos_pos_graduacao_acervo_circulante.value_counts().to_frame('quantidade').reset_index()
+alunos_pos_graduacao_acervo_circulante
+
+gera_box_plot(alunos_pos_graduacao_acervo_circulante,'ano','quantidade','Distribuição dos empréstimos mensais', 'Realizados pelos alunos de pós graduação no acervo circulante')
+
+cadastro_usuarios_antes_2010 = pd.read_excel('https://github.com/FranciscoFoz/7_Days_of_Code_Alura-Python-Pandas/raw/main/Dia_6-Novos_dados_novas_analises/Datasets/matricula_alunos.xlsx',
+                                        sheet_name='Até 2010',skiprows=1)
+cadastro_usuarios_depois_2010 = pd.read_excel('https://github.com/FranciscoFoz/7_Days_of_Code_Alura-Python-Pandas/raw/main/Dia_6-Novos_dados_novas_analises/Datasets/matricula_alunos.xlsx',
+                                        sheet_name='Após 2010',skiprows=1)
+
+cadastro_usuarios_antes_2010
+
+cadastro_usuarios_antes_2010.columns = ['matricula_ou_siape','tipo_vinculo_usuario','curso']
+
+cadastro_usuarios_depois_2010
+
+cadastro_usuarios_depois_2010.columns= ['matricula_ou_siape','tipo_vinculo_usuario','curso']
+
+cadastro_usuarios_excel = pd.concat([cadastro_usuarios_antes_2010,cadastro_usuarios_depois_2010],ignore_index=True)
+cadastro_usuarios_excel.matricula_ou_siape = cadastro_usuarios_excel.matricula_ou_siape.astype('string')
+cadastro_usuarios_excel
+
+cadastro_usuarios_json = pd.read_json('https://github.com/FranciscoFoz/7_Days_of_Code_Alura-Python-Pandas/raw/main/Dia_6-Novos_dados_novas_analises/Datasets/cadastro_alunos.json')
+cadastro_usuarios_json
+
+cadastro_usuarios_graduacao_json = pd.read_json(cadastro_usuarios_json.registros[0])
+
+cadastro_usuarios_graduacao_json
+
+cadastro_usuarios_graduacao_json.info()
+
+cadastro_usuarios_graduacao_json.matricula_ou_siape = cadastro_usuarios_graduacao_json.matricula_ou_siape.astype('float')
+cadastro_usuarios_graduacao_json.matricula_ou_siape = cadastro_usuarios_graduacao_json.matricula_ou_siape.astype('string')
+
+cadastro_usuarios_graduacao_json.info()
+
+cadastro_usuarios_cursos = pd.concat([cadastro_usuarios_excel,cadastro_usuarios_graduacao_json],ignore_index=True)
+cadastro_usuarios_cursos
+
+matricula_data_de_emprestimo = emprestimos_completo.query("tipo_vinculo_usuario == 'ALUNO DE GRADUAÇÃO'")
+matricula_data_de_emprestimo = matricula_data_de_emprestimo.loc[:,['matricula_ou_siape','data_emprestimo']]
+matricula_data_de_emprestimo = matricula_data_de_emprestimo.query('data_emprestimo > 2015')
+matricula_data_de_emprestimo = matricula_data_de_emprestimo.reset_index(drop=True)
+matricula_data_de_emprestimo
+
+matricula_data_de_emprestimo.isna().sum()
+
+matricula_data_de_emprestimo = matricula_data_de_emprestimo.dropna()
+
+cadastro_usuarios_cursos_selecionados = cadastro_usuarios_cursos.query("curso == ['BIBLIOTECONOMIA','CIÊNCIAS SOCIAIS','COMUNICAÇÃO SOCIAL','DIREITO','FILOSOFIA','PEDAGOGIA']")
+cadastro_usuarios_cursos_selecionados
+
+cadastro_usuarios_cursos_selecionados = matricula_data_de_emprestimo.merge(cadastro_usuarios_cursos_selecionados)
+cadastro_usuarios_cursos_selecionados
+
+cadastro_usuarios_cursos_selecionados.data_emprestimo = cadastro_usuarios_cursos_selecionados.data_emprestimo.dt.year
+
+emprestimos_cursos_selecionados = cadastro_usuarios_cursos_selecionados.iloc[:,[1,3]].value_counts().reset_index()
+emprestimos_cursos_selecionados.columns = ['ANO','CURSO','QUANTIDADE_EMPRESTIMOS']
+emprestimos_cursos_selecionados
+
+emprestimos_tipo_usuario_curso_pivot = emprestimos_cursos_selecionados.pivot_table(
+        index = 'CURSO',
+        columns = 'ANO',
+        values = 'QUANTIDADE_EMPRESTIMOS',
+        fill_value = '-',
+        aggfunc= sum,
+        margins = True,
+        margins_name = 'TOTAL',
+)
+emprestimos_tipo_usuario_curso_pivot
